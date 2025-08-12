@@ -1,0 +1,596 @@
+import React, { useState, useEffect } from 'react';
+import styled, { keyframes, css } from 'styled-components';
+import { FaSyncAlt, FaFacebookF, FaTwitter, FaLinkedinIn, FaGithub } from 'react-icons/fa';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { account } from '../utils/appwrite'; // Import from our utility file
+import { Client, Account } from "appwrite"; 
+
+
+// --- Keyframes (Animations) ---
+const float = keyframes`
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+`;
+
+const twinkle = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+`;
+
+const slideOut = keyframes`
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(50px); opacity: 0; }
+`;
+
+const slideIn = keyframes`
+  0% { transform: translateX(-50px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+`;
+
+
+// --- React Component ---
+const SignIn = () => {
+  const location = useLocation(); // Get location object
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [stars, setStars] = useState([]);
+  const [errorMessage, setErrorMessage] = useState(''); // State for error message
+  const navigate = useNavigate();
+
+
+
+
+  useEffect(() => {
+    const newStars = [];
+    for (let i = 0; i < 50; i++) {
+      newStars.push({
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        size: `${Math.random() * 2 + 1}px`,
+        delay: `${Math.random() * 2}s`,
+      });
+    }
+    setStars(newStars);
+  }, []);
+
+  useEffect(() => {
+    // Check query parameter to set initial mode
+    const params = new URLSearchParams(location.search);
+    if (params.get('mode') === 'signup') {
+      setIsSignUp(true);
+    }
+  }, [location]);
+
+  const handleToggleForm = (e) => {
+    e.preventDefault();
+    if (isAnimating) return;
+
+    setIsAnimating(true);
+    setTimeout(() => {
+      setIsSignUp(prev => !prev);
+      setIsAnimating(false);
+    }, 300); // Duration of the animation
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setErrorMessage(''); // Clear previous error message
+    const form = e.target;
+    const email = form.querySelector('input[type="email"]').value;
+    const password = form.querySelector('input[type="password"]').value;
+    const firstName = isSignUp ? form.querySelector('input[name="firstName"]').value : null;
+    const lastName = isSignUp ? form.querySelector('input[name="lastName"]').value : null;
+  const rememberMeInput = form.querySelector('input[name="rememberMe"]');
+  const rememberMe = rememberMeInput ? rememberMeInput.checked : false;
+
+    try {
+      if (isSignUp) {
+        // Call sign-up API
+        const response = await fetch('http://localhost:5000/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, firstName, lastName }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || 'Sign-up failed');
+        }
+
+        alert('Sign-up successful! Redirecting to sign-in page...');
+        setIsSignUp(false); // Switch back to Sign In mode
+        navigate('/signin'); // Redirect to sign-in page
+      } else {
+        // Call sign-in API
+        const response = await fetch('http://localhost:5000/api/auth/signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || 'Sign-in failed');
+        }
+
+        if (rememberMe) {
+          localStorage.setItem('rememberMe', JSON.stringify({ email })); // Store email in local storage
+        } else {
+          localStorage.removeItem('rememberMe'); // Clear "Remember Me" data
+        }
+
+        localStorage.setItem('user', JSON.stringify(data.user));
+        navigate('/profile');
+      }
+    } catch (error) {
+      setErrorMessage(error.message); // Set error message
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+    const handleGoogleSignIn = () => {
+    setIsGoogleLoading(true);
+    setErrorMessage('');
+    account.createOAuth2Session(
+      'google',
+      'http://localhost:5000/oauth-callback',
+      'http://localhost:5000/login'
+    );
+  };
+
+
+
+  return (
+    <Container>
+      <LeftPanel>
+        <CosmicBg />
+        <Planet />
+        <Mountains />
+        <Stars>
+          {stars.map((star, i) => <Star key={i} {...star} />)}
+        </Stars>
+
+        <LeftContent>
+          <div>
+            <LogoSection>
+              <h1>Spherical Worlds</h1>
+              <p>Explore infinite possibilities</p>
+            </LogoSection>
+            <NavButtons>
+              <NavBtn href="#">Sign Up</NavBtn>
+              <NavBtn href="#">Join Us</NavBtn>
+            </NavButtons>
+          </div>
+
+          <BottomInfo>
+            <h3>Andrean.ui</h3>
+            <p>UI & UX Designer</p>
+          </BottomInfo>
+        </LeftContent>
+      </LeftPanel>
+
+      <RightPanel>
+        <ToggleFormButton onClick={handleToggleForm}>
+          <FaSyncAlt />
+        </ToggleFormButton>
+
+        <FormContainer $isAnimating={isAnimating} $isSignUp={isSignUp}>
+          <Brand>
+            <BrandLogo />
+            <h2>UISOCIAL</h2>
+          </Brand>
+
+          <Welcome>
+            <h1>{isSignUp ? 'Create Account' : 'Hi Designer'}</h1>
+            <p>{isSignUp ? 'Join UISOCIAL today' : 'Welcome to UISOCIAL'}</p>
+          </Welcome>
+
+          <form onSubmit={handleFormSubmit}>
+            {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>} {/* Display error message */}
+            {isSignUp && (
+              <>
+                <FormGroup>
+                  <label>First Name</label>
+                  <input type="text" name="firstName" placeholder="Enter your first name" required />
+                </FormGroup>
+                <FormGroup>
+                  <label>Last Name</label>
+                  <input type="text" name="lastName" placeholder="Enter your last name" required />
+                </FormGroup>
+              </>
+            )}
+            <FormGroup>
+              <label>Email</label>
+              <input type="email" placeholder="Enter your email" required />
+            </FormGroup>
+
+            <FormGroup>
+              <label>Password</label>
+              <input type="password" placeholder="Enter your password" required />
+            </FormGroup>
+
+            {isSignUp && (
+              <FormGroup>
+                <label>Confirm Password</label>
+                <input type="password" placeholder="Confirm your password" required />
+              </FormGroup>
+            )}
+
+            {!isSignUp && (
+              <RememberForgot>
+                <RememberMe>
+                  <input type="checkbox" id="rememberCheckbox" name="rememberMe" />
+                  <label htmlFor="rememberCheckbox">Remember me</label>
+                </RememberMe>
+                <ForgotPassword>
+                  <a href="#">Forgot password?</a>
+                </ForgotPassword>
+              </RememberForgot>
+            )}
+
+            <SignInBtn type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In to Account')}
+            </SignInBtn>
+
+            <Divider>Or</Divider>
+
+            <GoogleBtn type="button" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+              <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M18 9.2c0-.7-.1-1.4-.2-2H9.2v3.9h4.9c-.2 1.1-.9 2-1.8 2.6v2.1h2.9c1.7-1.6 2.6-3.9 2.6-6.6z" /><path fill="#34A853" d="M9.2 18c2.4 0 4.5-.8 6-2.2l-2.9-2.1c-.8.6-1.9.9-3.1.9-2.4 0-4.4-1.6-5.1-3.9H1.1v2.1C2.6 15.9 5.7 18 9.2 18z" /><path fill="#FBBC04" d="M4.1 10.7c-.2-.6-.2-1.2 0-1.8V6.8H1.1c-.7 1.4-.7 3.1 0 4.5l3-2.6z" /><path fill="#EA4335" d="M9.2 3.6c1.3 0 2.5.4 3.4 1.3l2.5-2.5C13.7.7 11.6 0 9.2 0 5.7 0 2.6 2.1 1.1 5.4l3 2.1c.7-2.3 2.7-3.9 5.1-3.9z" /></svg>
+              <span>{isGoogleLoading ? 'Signing in...' : (isSignUp ? 'Sign up with Google' : 'Continue with Google')}</span>
+            </GoogleBtn>
+
+            <SocialLogin>
+              <SocialBtn href="#"><FaFacebookF /></SocialBtn>
+              <SocialBtn href="#"><FaTwitter /></SocialBtn>
+              <SocialBtn href="#"><FaLinkedinIn /></SocialBtn>
+              <SocialBtn href="#"><FaGithub /></SocialBtn>
+            </SocialLogin>
+
+            <SignupLink>
+              {isSignUp ? 'Already have an account? ' : 'Dont have an account? '}
+              <a href="#" onClick={handleToggleForm}>
+                {isSignUp ? 'Sign in' : 'Sign up'}
+              </a>
+            </SignupLink>
+          </form>
+        </FormContainer>
+      </RightPanel>
+    </Container>
+  );
+};
+
+export default SignIn;
+
+
+// --- Styled Components ---
+
+const Star = styled.div`
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: ${twinkle} 2s infinite;
+  left: ${({ left }) => left};
+  top: ${({ top }) => top};
+  width: ${({ size }) => size};
+  height: ${({ size }) => size};
+  animation-delay: ${({ delay }) => delay};
+`;
+
+const Container = styled.div`
+  display: flex;
+  height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  overflow: hidden;
+`;
+
+const LeftPanel = styled.div`
+  flex: 1;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  position: relative;
+  overflow: hidden;
+`;
+
+const CosmicBg = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 30% 70%, rgba(255, 107, 107, 0.3) 0%, transparent 50%),
+              radial-gradient(circle at 70% 20%, rgba(78, 205, 196, 0.2) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(255, 159, 67, 0.2) 0%, transparent 50%);
+`;
+
+const Planet = styled.div`
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  box-shadow: 0 0 50px rgba(255, 107, 107, 0.4);
+  top: 20%;
+  right: 15%;
+  width: 120px;
+  height: 120px;
+  animation: ${float} 6s ease-in-out infinite;
+`;
+
+const Mountains = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  clip-path: polygon(0 100%, 0 60%, 15% 40%, 30% 65%, 45% 35%, 60% 55%, 75% 25%, 90% 45%, 100% 30%, 100% 100%);
+`;
+
+const Stars = styled.div`
+  position: absolute;
+  width: 100%;
+  height: 100%;
+`;
+
+const LeftContent = styled.div`
+  position: relative;
+  z-index: 10;
+  padding: 40px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+`;
+
+const LogoSection = styled.div`
+  color: white;
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+  p { font-size: 14px; opacity: 0.8; }
+`;
+
+const NavButtons = styled.div`
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+`;
+
+const NavBtn = styled.a`
+  padding: 8px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  text-decoration: none;
+  border-radius: 25px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+`;
+
+const BottomInfo = styled.div`
+  color: white;
+  h3 { font-size: 18px; margin-bottom: 5px; }
+  p { font-size: 14px; opacity: 0.8; }
+`;
+
+const RightPanel = styled.div`
+  flex: 1;
+  background: #f8f9fa;
+  padding: 60px 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+`;
+
+const animationRule = css`
+  animation: ${props => props.$isAnimating ? (props.$isSignUp ? css`${slideIn}` : css`${slideOut}`) : 'none'} 0.3s ease-in-out forwards;
+`;
+
+const FormContainer = styled.div`
+  max-width: 400px;
+  width: 100%;
+  ${animationRule}
+`;
+
+const Brand = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 40px;
+  h2 { font-size: 18px; font-weight: 600; color: #333; }
+`;
+
+const BrandLogo = styled.div`
+  width: 8px;
+  height: 8px;
+  background: #ff6b6b;
+  border-radius: 50%;
+`;
+
+const Welcome = styled.div`
+  margin-bottom: 40px;
+  h1 { font-size: 32px; font-weight: 700; color: #333; margin-bottom: 8px; }
+  p { color: #666; font-size: 14px; }
+`;
+
+const FormGroup = styled.div`
+  margin-bottom: 25px;
+  label { display: block; font-size: 14px; color: #333; margin-bottom: 8px; font-weight: 500; }
+  input {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+    &:focus {
+      outline: none;
+      border-color: #ff6b6b;
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+    }
+  }
+`;
+
+const RememberForgot = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+`;
+
+const RememberMe = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #ff6b6b;
+    cursor: pointer;
+  }
+  label { font-size: 14px; color: #666; cursor: pointer; margin: 0; }
+`;
+
+const ForgotPassword = styled.div`
+  margin: 0;
+  a { color: #666; font-size: 14px; text-decoration: none; &:hover { color: #ff6b6b; } }
+`;
+
+const Button = styled.button`
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+`;
+
+
+const SignInBtn = styled(Button)`
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  margin-bottom: 20px; /* Adjusted */
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+  }
+`;
+
+const GoogleBtn = styled(Button)`
+  background: white;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+  font-size: 14px;
+  font-weight: 500;
+  &:hover:not(:disabled) {
+    background: #f8f9fa;
+    border-color: #c1c7cd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  &:active:not(:disabled) {
+    background: #f1f3f4;
+  }
+`;
+
+const Divider = styled.div`
+  text-align: center;
+  margin: 20px 0;
+  color: #999;
+  font-size: 12px;
+  position: relative;
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: #e1e5e9;
+  }
+  &::before { left: 0; }
+  &::after { right: 0; }
+`;
+
+const SocialLogin = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0 30px; /* Adjusted */
+`;
+
+const SocialBtn = styled.a`
+  width: 45px;
+  height: 45px;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #666;
+  transition: all 0.3s ease;
+  background: white;
+  font-size: 18px; /* Added for icon size */
+  &:hover {
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+    transform: translateY(-2px);
+  }
+`;
+
+const SignupLink = styled.div`
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+  a {
+    color: #ff6b6b;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    &:hover { text-decoration: underline; }
+  }
+`;
+
+const ToggleFormButton = styled.button`
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  &:hover {
+    color: #ff6b6b;
+    transform: rotate(180deg);
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: #ff4d4d;
+  background: #ffe6e6;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  text-align: center;
+`;

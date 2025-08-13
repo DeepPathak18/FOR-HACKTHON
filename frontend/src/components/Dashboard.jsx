@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
 
 const TechTonicHackathon = () => {
@@ -106,12 +107,40 @@ const TechTonicHackathon = () => {
     }, []);
 
     useEffect(() => {
-        const userData = localStorage.getItem('user');
-        if (userData) {
-            setUser(JSON.parse(userData));
-        } else {
-            navigate('/signin');
-        }
+        const fetchUserData = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                navigate('/signin');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/profile/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    // If token is invalid or expired, redirect to signin
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        navigate('/signin');
+                    }
+                    throw new Error('Failed to fetch user data');
+                }
+
+                const userData = await response.json();
+                setUser(userData);
+
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                localStorage.removeItem('token');
+                navigate('/signin');
+            }
+        };
+
+        fetchUserData();
     }, [navigate]);
 
     // --- EVENT HANDLERS ---
@@ -1670,17 +1699,10 @@ const TechTonicHackathon = () => {
             <div style={{position:'fixed', top:'24px', right:'32px', zIndex:2000, display:'flex', gap:'16px'}}>
                 <button
                     style={{background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', padding:'12px', cursor:'pointer', boxShadow:'0 2px 8px rgba(0,0,0,0.08)'}}
-                    onClick={() => setShowProfileModal(true)}
+                    onClick={() => navigate('/profile')}
                     title="Profile"
                 >
                     <FaUserCircle style={{fontSize:'2rem', color:'#a78bfa'}} />
-                </button>
-                <button
-                    style={{background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', padding:'12px', cursor:'pointer', boxShadow:'0 2px 8px rgba(0,0,0,0.08)'}}
-                    onClick={() => { localStorage.removeItem('user'); navigate('/'); }}
-                    title="Logout"
-                >
-                    <FaSignOutAlt style={{fontSize:'2rem', color:'#a78bfa'}} />
                 </button>
             </div>
 

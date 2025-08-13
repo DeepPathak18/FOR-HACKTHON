@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
+import { toast } from 'react-toastify';
 import { FaSyncAlt, FaFacebookF, FaTwitter, FaLinkedinIn, FaGithub } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { account } from '../utils/appwrite'; // Import from our utility file
@@ -85,6 +86,7 @@ const SignIn = () => {
     const password = form.querySelector('input[type="password"]').value;
     const firstName = isSignUp ? form.querySelector('input[name="firstName"]').value : null;
     const lastName = isSignUp ? form.querySelector('input[name="lastName"]').value : null;
+    const username = isSignUp ? form.querySelector('input[name="username"]').value : null;
   const rememberMeInput = form.querySelector('input[name="rememberMe"]');
   const rememberMe = rememberMeInput ? rememberMeInput.checked : false;
 
@@ -94,7 +96,7 @@ const SignIn = () => {
         const response = await fetch('http://localhost:5000/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, firstName, lastName }),
+          body: JSON.stringify({ email, password, firstName, lastName, username }),
         });
 
         const data = await response.json();
@@ -124,8 +126,15 @@ const SignIn = () => {
           localStorage.removeItem('rememberMe'); // Clear "Remember Me" data
         }
 
-        localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/profile');
+        localStorage.setItem('token', data.token); // Store the token
+        if (data.user && data.user.username) {
+          toast.success(`Sign-in successful! Welcome ${data.user.username}`);
+        } else if (data.user && data.user.email) {
+          toast.success(`Sign-in successful! Welcome ${data.user.email}`);
+        } else {
+          toast.success('Sign-in successful!');
+        }
+        navigate('/dashboard');
       }
     } catch (error) {
       setErrorMessage(error.message); // Set error message
@@ -195,6 +204,10 @@ const SignIn = () => {
             {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>} {/* Display error message */}
             {isSignUp && (
               <>
+                <FormGroup>
+                  <label>Username</label>
+                  <input type="text" name="username" placeholder="Enter your username" required />
+                </FormGroup>
                 <FormGroup>
                   <label>First Name</label>
                   <input type="text" name="firstName" placeholder="Enter your first name" required />

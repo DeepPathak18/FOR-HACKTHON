@@ -1,143 +1,170 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const jwt = require('jsonwebtoken'); // <-- 1. IMPORT THE JWT LIBRARY
 
 // Signup
 router.post('/signup', async (req, res) => {
-    const { firstName, lastName, phoneNumber, gender, email, password } = req.body;
+    const { username, firstName, lastName  , email, password } = req.body;
 
     console.log('Signup attempt for email:', email);
+    console.log('Request body:', req.body);
 
-    // Validate required fields
+    // --- No changes to your validation logic ---
     if (!firstName || !lastName || !email || !password) {
-        const missingFields = [];
-        if (!firstName) missingFields.push('first name');
-        if (!lastName) missingFields.push('last name');
-        if (!email) missingFields.push('email');
-        if (!password) missingFields.push('password');
-        
-        return res.status(400).json({ 
-            message: `Missing required fields: ${missingFields.join(', ')}` 
-        });
+        return res.status(400).json({ message: 'Missing required fields' });
     }
-
-    // Validate email format
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
         return res.status(400).json({ message: 'Please enter a valid email address' });
     }
-
-    // Validate password length
     if (password.length < 6) {
         return res.status(400).json({ message: 'Password must be at least 6 characters long' });
     }
+    // --- End of validation ---
 
     try {
-        console.log('Attempting to find existing user...');
         let user = await User.findOne({ email });
         if (user) {
-            console.log('User already exists:', email);
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        console.log('Creating new user...');
         user = new User({
+            username,
             firstName,
             lastName,
-            phoneNumber,
-            gender,
             email,
             password,
         });
 
-        console.log('Saving user to database...');
         await user.save();
         console.log('User created successfully:', email);
+        
+        // --- ADDED JWT GENERATION ON SIGNUP ---
+        // <-- 2. Create the payload for the token
+        const payload = {
+            user: {
+                id: user.id // Use the MongoDB document ID
+            }
+        };
 
-        res.json({ message: 'Signup successful' });
+        // <-- 3. Sign the token with your secret key
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET, // Your secret key from .env file
+            { expiresIn: '5h' },   // Token expires in 5 hours
+            (err, token) => {
+                if (err) throw err;
+                // <-- 4. Send the token back to the client
+                res.json({ message: 'Signup successful', token });
+            }
+        );
+        // --- END OF JWT GENERATION ---
+
     } catch (err) {
         console.error('Signup error details:', err);
-        console.error('Error stack:', err.stack);
-        res.status(500).json({ 
-            message: 'Server error', 
-            error: err.message,
-            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-        });
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 });
 
 // Signin
 router.post('/signin', async (req, res) => {
-  const { email, password } = req.body;
-  
-  console.log('Signin attempt for email:', email);
-  
-  // Validate input
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
-  }
-  
-  try {
-    // Find user by email
-    const user = await User.findOne({ email });
-    console.log('User found:', user ? 'Yes' : 'No');
-    
-    if (!user) {
-      console.log('User not found for email:', email);
-      return res.status(400).json({ message: 'Invalid email or password' });
+    const { email, password } = req.body;
+    console.log('Signin attempt for email:', email);
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    // Use the matchPassword method to compare hashed password
-    const isMatch = await user.matchPassword(password);
-    console.log('Password match:', isMatch);
-    
-    if (!isMatch) {
-      console.log('Password mismatch for user:', email);
-      return res.status(400).json({ message: 'Invalid email or password' });
-    }
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid email or password' });
+        }
 
-    // Success: send user info or token
-    console.log('Sign in successful for user:', email);
-    res.json({ 
-      message: 'Sign in successful', 
-      user: { 
-        _id: user._id, // Add MongoDB document ID
-        email: user.email, 
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phoneNumber: user.phoneNumber,
-        gender: user.gender,
-        // Add any other fields needed for profile
-      } 
-    });
-  } catch (err) {
-    console.error('Signin error:', err);
-    res.status(500).json({ 
-      message: 'Server error', 
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
-  }
+        const isMatch = await user.matchPassword(password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid email or password' });
+        }
+
+        // --- ADDED JWT GENERATION ON SIGNIN ---
+        // <-- 2. Create the payload for the token
+        const payload = {
+            user: {
+                id: user.id // Use the MongoDB document ID
+            }
+        };
+        
+        console.log('Sign in successful, creating token for user:', email);
+        
+        // <-- 3. Sign the token with your secret key
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,   // Your secret key from .env file
+            { expiresIn: '5h' },      // Token expires in 5 hours
+            (err, token) => {
+                if (err) throw err;
+                // <-- 4. Send the token and user info back to the client
+                res.json({ 
+                    message: 'Sign in successful', 
+                    token,
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        username: user.username
+                    }
+                });
+            }
+        );
+        // --- END OF JWT GENERATION ---
+        
+    } catch (err) {
+        console.error('Signin error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 // Google OAuth route
 router.post('/google', async (req, res) => {
-  const { email, name, appwriteId } = req.body;
+    const { email, name, appwriteId } = req.body;
+    try {
+        let user = await User.findOne({ email });
+        if (!user) {
+            user = new User({
+                firstName: name,
+                email,
+                appwriteId,
+            });
+            await user.save();
+        }
+        
+        // --- ADDED JWT GENERATION ON OAUTH ---
+        // <-- 2. Create the payload for the token
+        const payload = {
+            user: {
+                id: user.id
+            }
+        };
 
-  try {
-    let user = await User.findOne({ email });
-    if (!user) {
-      user = new User({
-        firstName: name,
-        email,
-        appwriteId,
-      });
-      await user.save();
+        // <-- 3. Sign the token
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: '5h' },
+            (err, token) => {
+                if (err) throw err;
+                // <-- 4. Send the token back
+                res.status(200).json({ message: 'Google login successful', token });
+            }
+        );
+        // --- END OF JWT GENERATION ---
+        
+    } catch (err) {
+        console.error('OAuth error:', err);
+        res.status(500).json({ message: 'Server error' });
     }
-    res.status(200).json({ message: 'Google login successful', user });
-  } catch (err) {
-    console.error('OAuth error:', err);
-    res.status(500).json({ message: 'Server error' });
-  }
 });
 
-module.exports = router;
+module.exports = router;  

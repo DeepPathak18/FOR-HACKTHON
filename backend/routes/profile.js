@@ -1,26 +1,57 @@
 const express = require('express');
 const router = express.Router();
+const { protect } = require('../middleware/authMiddleware');
 const User = require('../models/User');
 
-// Get user profile by ID
-router.get('/:id', async (req, res) => {
+// @route   GET api/profile/me
+// @desc    Get current user's profile
+// @access  Private
+router.get('/me', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    // req.user is attached by the protect middleware
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err.message);
+    res.status(500).send('Server Error');
   }
 });
 
-// Update user profile by ID
-router.put('/:id', async (req, res) => {
+// @route   PUT api/profile/me
+// @desc    Update user profile
+// @access  Private
+router.put('/me', protect, async (req, res) => {
+  const { firstName, lastName, email, phoneNumber, gender } = req.body;
+
+  // Build profile object
+  const profileFields = {};
+  if (firstName) profileFields.firstName = firstName;
+  if (lastName) profileFields.lastName = lastName;
+  if (email) profileFields.email = email;
+  if (phoneNumber) profileFields.phoneNumber = phoneNumber;
+  if (gender) profileFields.gender = gender;
+
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
+    let user = await User.findById(req.user.id);
+
+    if (user) {
+      // Update
+      user = await User.findByIdAndUpdate(
+        req.user.id,
+        { $set: profileFields },
+        { new: true }
+      ).select('-password');
+
+      return res.json(user);
+    }
+
+    res.status(404).json({ message: 'User not found' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err.message);
+    res.status(500).send('Server Error');
   }
 });
 

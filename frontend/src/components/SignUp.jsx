@@ -32,7 +32,9 @@ const SignUp = () => {
 
     setIsLoading(true);
     try {
-    await axios.post('/api/auth/signup', { username, firstName, lastName, email, password });
+    const response = await axios.post('/api/auth/signup', { username, firstName, lastName, email, password });
+    console.log('Signup API full response:', response);
+    console.log('Signup API data:', response.data);
     console.log('Signup successful');
     navigate('/dashboard'); // Redirect to dashboard page
     } catch (err) {

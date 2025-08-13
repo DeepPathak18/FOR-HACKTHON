@@ -1,56 +1,74 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { FaUserCircle, FaEnvelope, FaUserTag, FaIdBadge, FaEdit, FaSave, FaTimes, FaPhone, FaVenusMars, FaCamera } from 'react-icons/fa';
-// import { getProfile, updateProfile } from '../utils/api'; // Assuming you have these
 import { useNavigate } from 'react-router-dom';
+import Toast from './Toast';
 
-// --- MOCK API FUNCTIONS FOR DEMONSTRATION ---
-// In your real app, you would remove these and use your actual API calls.
-const getProfile = async (userId) => {
-    console.log(`MOCK GET: Fetching profile for ${userId}`);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-    return {
-        _id: '12345',
-        firstName: 'Alex',
-        lastName: 'Doe',
-        email: 'alex.doe@example.com',
-        username: 'alexdoe',
-        phoneNumber: '123-456-7890',
-        gender: 'Male',
-        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-    };
-};
-
-const updateProfile = async (userId, formData) => {
-    console.log(`MOCK UPDATE: Updating profile for ${userId}`);
-    // Log FormData contents
-    for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-    }
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-    // Return a new object that includes the updated avatar URL if one was uploaded
-    const updatedData = {};
-    for (let [key, value] of formData.entries()) {
-        if (key !== 'avatar') {
-            updatedData[key] = value;
+// Real API functions
+const getProfile = async (email) => {
+    try {
+        console.log('🔍 Fetching profile for email:', email);
+        // Temporarily use full URL to test if proxy is working
+        const response = await fetch(`http://localhost:5000/api/profile/me?email=${encodeURIComponent(email)}`);
+        console.log('📡 Profile API response status:', response.status);
+        console.log('📡 Profile API response headers:', response.headers);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ API Error Response:', errorText);
+            throw new Error(`Failed to fetch profile: ${response.status} ${response.statusText}`);
         }
+        const data = await response.json();
+        console.log('📊 Profile data received:', data);
+        return data;
+    } catch (error) {
+        console.error('❌ Error fetching profile:', error);
+        throw error;
     }
-    // If an avatar was part of the form data, simulate a new URL for it
-    if (formData.has('avatar')) {
-        updatedData.avatar = URL.createObjectURL(formData.get('avatar'));
-    }
-    return updatedData;
 };
-// --- END OF MOCK API FUNCTIONS ---
+
+const updateProfile = async (email, formData) => {
+    try {
+        console.log('🔄 Updating profile for email:', email);
+        console.log('📝 Update data:', formData);
+        // Temporarily use full URL to test if proxy is working
+        const response = await fetch('http://localhost:5000/api/profile/me/update', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email,
+                ...formData
+            })
+        });
+        
+        console.log('📡 Update API response status:', response.status);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update profile');
+        }
+        
+        const result = await response.json();
+        console.log('✅ Profile update successful:', result);
+        return result;
+    } catch (error) {
+        console.error('❌ Error updating profile:', error);
+        throw error;
+    }
+};
 
 
-const getUserId = () => {
+const getUserEmail = () => {
   try {
     const user = JSON.parse(localStorage.getItem('user'));
-    return user?._id || user?.id || user?.email || '12345'; // Fallback for demo
+    console.log('👤 User from localStorage:', user);
+    const email = user?.email;
+    console.log('📧 Extracted email:', email);
+    return email;
   } catch (err) {
-    console.error('Error parsing user from localStorage:', err);
-    return '12345'; // Fallback for demo
+    console.error('❌ Error parsing user from localStorage:', err);
+    return null;
   }
 };
 
@@ -63,41 +81,56 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
-  const userId = getUserId();
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    if (!userId) {
-      setError('No user ID found. Please log in again.');
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError('');
-    getProfile(userId)
-      .then(data => {
-        if (!data) {
-          throw new Error('No profile data returned from API.');
-        }
-        setUser(data);
-        setForm({
-          firstName: data.firstName || '',
-          lastName: data.lastName || '',
-          email: data.email || '',
-          username: data.username || '',
-          phoneNumber: data.phoneNumber || '',
-          gender: data.gender || '',
+    const fetchUserData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/signin');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:5000/api/profile/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
-        setAvatarPreview(data.avatar || '');
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            localStorage.removeItem('token');
+            navigate('/signin');
+          }
+          throw new Error('Failed to fetch user data');
+        }
+
+        const userData = await response.json();
+        setUser(userData);
+        setForm({
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          email: userData.email || '',
+          username: userData.username || '',
+          phoneNumber: userData.phoneNumber || '',
+          gender: userData.gender || '',
+        });
+        setAvatarPreview(userData.avatar || '');
         setLoading(false);
-      })
-      .catch(err => {
-        console.error('Profile API error:', err);
+
+      } catch (error) {
+        console.error('Error fetching user data:', error);
         setError('Failed to load profile. Please try again later.');
         setLoading(false);
-      });
-  }, [userId]);
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
 
   const handleEdit = () => {
     // Reset form and avatar preview to current user state when opening modal
@@ -106,8 +139,6 @@ const Profile = () => {
         lastName: user.lastName || '',
         email: user.email || '',
         username: user.username || '',
-        phoneNumber: user.phoneNumber || '',
-        gender: user.gender || '',
     });
     setAvatarPreview(user.avatar || '');
     setAvatarFile(null);
@@ -135,26 +166,26 @@ const Profile = () => {
   const handleSave = async () => {
     setIsSaving(true);
     setError('');
-
-    // Use FormData to handle file uploads
-    const formData = new FormData();
-    Object.keys(form).forEach(key => {
-        formData.append(key, form[key]);
-    });
-    if (avatarFile) {
-        formData.append('avatar', avatarFile);
-    }
+    const token = localStorage.getItem('token');
 
     try {
-      const updated = await updateProfile(userId, formData);
-      // Create a new user object with updated fields
-      const updatedUser = { ...user, ...form };
-      if (updated.avatar) {
-          updatedUser.avatar = updated.avatar;
+      const response = await fetch('http://localhost:5000/api/profile/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(form)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
       }
+
+      const updatedUser = await response.json();
       setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
       setEditMode(false);
+      setShowSuccessToast(true); // Show success notification
     } catch (err) {
       setError('Failed to update profile.');
     } finally {
@@ -176,6 +207,15 @@ const Profile = () => {
 
   return (
     <ProfileContainer>
+      {showSuccessToast && (
+        <Toast
+          message="Profile updated successfully!"
+          type="success"
+          onClose={() => setShowSuccessToast(false)}
+          duration={5000}
+        />
+      )}
+      
       <ProfileCard>
         <AvatarContainer>
             <Avatar src={user?.avatar || 'https://placehold.co/150x150/E0F7FA/01579B?text=User'} alt="Avatar" />

@@ -2,6 +2,13 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
+    username: {
+        type: String,
+        required: false,
+        trim: true,
+        unique: true,
+        sparse: true,
+    },
     firstName: {
         type: String,
         required: false, // Make optional for OAuth users
@@ -24,6 +31,16 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: false, // Make optional for OAuth users
         minlength: 6,
+    },
+    phoneNumber: {
+        type: String,
+        required: false,
+        trim: true,
+    },
+    gender: {
+        type: String,
+        required: false,
+        trim: true,
     },
     appwriteId: {
         type: String,

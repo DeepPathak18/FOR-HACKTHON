@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { FaRocket, FaUserCircle, FaSignOutAlt, FaHome, FaInfoCircle, FaCalendarAlt, FaTrophy, FaUsers, FaCode, FaLightbulb } from 'react-icons/fa';
+import { FaRocket, FaCode, FaUsers, FaTrophy, FaLightbulb, FaUserCircle, FaInfoCircle, FaCalendarAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 // Animations
@@ -58,26 +58,19 @@ const float = keyframes`
 const LandingPage = () => {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
-  const [userData, setUserData] = useState(null);
+  const [logoutMessage, setLogoutMessage] = useState('');
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUserData(JSON.parse(userData));
+    // Check for logout message
+    const message = localStorage.getItem('logoutMessage');
+    if (message) {
+      setLogoutMessage(message);
+      localStorage.removeItem('logoutMessage');
     }
     
     // Trigger animations
     setTimeout(() => setIsVisible(true), 100);
   }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    navigate('/');
-    // Show logout success message
-    setTimeout(() => {
-      alert('Logout successful!');
-    }, 100);
-  };
 
   const handleNavigation = (path) => {
     // Add page transition animation
@@ -94,6 +87,13 @@ const LandingPage = () => {
 
   return (
     <Container>
+      {/* Logout Message */}
+      {logoutMessage && (
+        <LogoutMessage>
+          {logoutMessage}
+        </LogoutMessage>
+      )}
+      
       {/* Floating Particles */}
       <ParticleContainer>
         {[...Array(20)].map((_, i) => (
@@ -110,24 +110,14 @@ const LandingPage = () => {
           <span>TECH-TONIC</span>
         </Logo>
         
-        {userData && (
-          <UserSection>
-            <UserInfo>
-              <span>Welcome, {userData.firstName || 'User'}!</span>
-              <span className="email">{userData.email}</span>
-            </UserInfo>
-            <UserAvatar>
-              {userData.profilePicture ? (
-                <img src={userData.profilePicture} alt="Profile" />
-              ) : (
-                <FaUserCircle />
-              )}
-            </UserAvatar>
-            <LogoutButton onClick={handleLogout}>
-              <FaSignOutAlt />
-            </LogoutButton>
-          </UserSection>
-        )}
+        <AuthButtons>
+          <SignInButton onClick={() => handleNavigation('/signin')}>
+            Sign In
+          </SignInButton>
+          <SignUpButton onClick={() => handleNavigation('/signup')}>
+            Sign Up
+          </SignUpButton>
+        </AuthButtons>
       </Header>
 
       {/* Main Content */}
@@ -272,20 +262,20 @@ const LandingPage = () => {
               <ActionDescription>Create your account and join the event</ActionDescription>
             </ActionCard>
 
-            <ActionCard onClick={() => handleNavigation('/profile')}>
+            <ActionCard onClick={() => handleNavigation('/signin')}>
               <ActionIcon>
                 <FaInfoCircle />
               </ActionIcon>
-              <ActionTitle>Profile</ActionTitle>
-              <ActionDescription>Manage your profile and preferences</ActionDescription>
+              <ActionTitle>Learn More</ActionTitle>
+              <ActionDescription>Discover hackathon details and rules</ActionDescription>
             </ActionCard>
 
-            <ActionCard onClick={() => handleNavigation('/dashboard')}>
+            <ActionCard onClick={() => handleNavigation('/signup')}>
               <ActionIcon>
                 <FaCalendarAlt />
               </ActionIcon>
-              <ActionTitle>Dashboard</ActionTitle>
-              <ActionDescription>View your hackathon progress</ActionDescription>
+              <ActionTitle>Join Event</ActionTitle>
+              <ActionDescription>Register and start your journey</ActionDescription>
             </ActionCard>
           </ActionsGrid>
         </QuickActionsSection>
@@ -303,6 +293,21 @@ const Container = styled.div`
   color: #fff;
   position: relative;
   overflow-x: hidden;
+`;
+
+const LogoutMessage = styled.div`
+  position: fixed;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+  z-index: 1000;
+  font-weight: 600;
+  animation: ${fadeInUp} 0.5s ease-out;
 `;
 
 const ParticleContainer = styled.div`
@@ -370,65 +375,45 @@ const LogoIcon = styled.div`
   animation: ${pulse} 2s infinite ease-in-out;
 `;
 
-const UserSection = styled.div`
+const AuthButtons = styled.div`
   display: flex;
-  align-items: center;
   gap: 1rem;
+  align-items: center;
 `;
 
-const UserInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  font-size: 0.9rem;
-  
-  .email {
-    opacity: 0.7;
-    font-size: 0.8rem;
-  }
-`;
-
-const UserAvatar = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+const SignInButton = styled.button`
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-  
-  &:hover {
-    transform: scale(1.1);
-  }
-  
-  img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-  }
-`;
-
-const LogoutButton = styled.button`
-  background: rgba(239, 68, 68, 0.9);
-  border: none;
-  border-radius: 8px;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
   
   &:hover {
-    background: rgba(239, 68, 68, 1);
-    transform: scale(1.05);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(59, 130, 246, 0.4);
+  }
+`;
+
+const SignUpButton = styled.button`
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(236, 72, 153, 0.3);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(236, 72, 153, 0.4);
   }
 `;
 
@@ -713,4 +698,3 @@ const ActionDescription = styled.p`
   font-size: 0.9rem;
   line-height: 1.5;
 `;
-  

@@ -1,18 +1,48 @@
+// 1. Load environment variables at the very top. This is crucial.
+const dotenvResult = require('dotenv').config();
+
+if (dotenvResult.error) {
+  console.error('Error loading .env file:', dotenvResult.error);
+} else {
+  console.log('Successfully loaded .env file. Parsed variables:', dotenvResult.parsed);
+}
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error(err));
+// 2. Add this console log for debugging.
+// This will immediately tell us if the variable was loaded from your .env file.
+console.log('Attempting to connect with MONGO_URI:', process.env.MONGO_URI);
+
+// 3. Connect to MongoDB
+// Note: useNewUrlParser and useUnifiedTopology are no longer needed in recent Mongoose versions.
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('✅ MongoDB connected successfully');
+  })
+  .catch(err => {
+    // This provides a clearer error message upon failure
+    console.error('❌ MongoDB connection error: Could not connect.');
+    process.exit(1);
+  });
+
+// Handle other connection events
+mongoose.connection.on('error', (err) => {
+  console.error('❌ MongoDB runtime error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('⚠️  MongoDB disconnected');
+});
 
 // Mount the auth routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/profile', require('./routes/profile'));
 
-app.listen(5000, () => console.log('Server running on port 5000'));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

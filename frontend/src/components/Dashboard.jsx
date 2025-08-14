@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaUserCircle, FaSignOutAlt, FaBell } from 'react-icons/fa';
+import { FaUserCircle, FaSignOutAlt, FaBell, FaSun, FaMoon } from 'react-icons/fa';
+import { useTheme } from '../utils/useTheme';
 
 const TechTonicHackathon = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,6 +16,23 @@ const TechTonicHackathon = () => {
     const [user, setUser] = useState(null);
     const [showProfileModal, setShowProfileModal] = useState(false);
     const navigate = useNavigate();
+    const { theme, toggleTheme, isDark, isLight } = useTheme();
+
+    // Enhanced theme toggle with notification
+    const handleThemeToggle = () => {
+        const newTheme = toggleTheme();
+        
+        // Show theme change notification
+        toast.success(`Switched to ${newTheme} mode!`, {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+        });
+    };
+
 
     // --- SIDE EFFECTS (Lifecycle Management) ---
 
@@ -192,6 +210,21 @@ const TechTonicHackathon = () => {
             --shadow-glow: rgba(37, 99, 235, 0.3);
         }
 
+        html[data-theme='dark'] {
+            --primary-blue: #3B82F6;
+            --secondary-blue: #60A5FA;
+            --accent-blue: #93C5FD;
+            --light-blue: #BFDBFE;
+            --dark-blue: #1E40AF;
+            --dark-bg: #020617;
+            --darker-bg: #0F172A;
+            --card-bg: rgba(30, 41, 59, 0.9);
+            --border-color: rgba(59, 130, 246, 0.5);
+            --text-primary: #F9FAFB;
+            --text-secondary: #E5E7EB;
+            --text-muted: #9CA3AF;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -213,7 +246,13 @@ const TechTonicHackathon = () => {
             line-height: 1.6;
             overflow-x: hidden;
             position: relative;
+            transition: background-color 0.5s ease;
         }
+
+        html[data-theme='dark'] body {
+            background: var(--dark-bg);
+        }
+
 
         body::before {
             content: '';
@@ -1703,7 +1742,14 @@ const TechTonicHackathon = () => {
             </section>
 
             {/* Profile and Logout Buttons at top right */}
-            <div style={{position:'fixed', top:'24px', right:'32px', zIndex:2000, display:'flex', gap:'16px'}}>
+            <div style={{position:'fixed', top:'24px', right:'32px', zIndex:2000, display:'flex', gap:'16px', alignItems: 'center'}}>
+                <button
+                    onClick={handleThemeToggle}
+                    className="theme-toggle"
+                    title="Toggle Theme"
+                >
+                    {isLight ? <FaMoon /> : <FaSun />}
+                </button>
                 <button
                     style={{background:'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', padding:'12px', cursor:'pointer', boxShadow:'0 2px 8px rgba(0,0,0,0.08)'}}
                     onClick={() => navigate('/activity')}

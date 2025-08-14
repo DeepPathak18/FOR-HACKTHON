@@ -91,43 +91,64 @@ router.get('/me', protect, async (req, res) => {
 // @desc    Update user profile
 // @access  Private
 router.put('/me', protect, async (req, res) => {
-  const { firstName, lastName, email, phoneNumber, gender } = req.body;
+    const { firstName, lastName, email, phoneNumber, gender } = req.body;
 
-  // Build profile object
-  const profileFields = {};
-  if (firstName) profileFields.firstName = firstName;
-  if (lastName) profileFields.lastName = lastName;
-  if (email) profileFields.email = email;
-  if (phoneNumber) profileFields.phoneNumber = phoneNumber;
-  if (gender) profileFields.gender = gender;
+    try {
+        const user = await User.findById(req.user.id);
 
-  try {
-    let user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
 
-    if (user) {
-      // Log profile update activity
-      const updateActivity = new Activity({
-          user: user._id,
-          activityType: 'profile_update',
-          description: 'User updated their profile.',
-      });
-      await updateActivity.save();
+        const changes = [];
+        if (firstName && user.firstName !== firstName) {
+            changes.push(`updated first name`);
+        }
+        if (lastName && user.lastName !== lastName) {
+            changes.push(`updated last name`);
+        }
+        if (email && user.email !== email) {
+            changes.push(`updated email`);
+        }
+        if (phoneNumber && user.phoneNumber !== phoneNumber) {
+            changes.push(`updated phone number`);
+        }
+        if (gender && user.gender !== gender) {
+            changes.push(`updated gender`);
+        }
 
-      // Update
-      user = await User.findByIdAndUpdate(
-        req.user.id,
-        { $set: profileFields },
-        { new: true }
-      ).select('-password');
+        if (changes.length > 0) {
+            const description = `User ${changes.join(', ')}.`;
+            const updateActivity = new Activity({
+                user: user._id,
+                activityType: 'profile_update',
+                description: description,
+            });
+            await updateActivity.save();
+        }
 
-      return res.json(user);
+        // Build profile object for update
+        const profileFields = {
+            firstName: firstName || user.firstName,
+            lastName: lastName || user.lastName,
+            email: email || user.email,
+            phoneNumber: phoneNumber || user.phoneNumber,
+            gender: gender || user.gender,
+        };
+
+        // Update user
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.id,
+            { $set: profileFields },
+            { new: true }
+        ).select('-password');
+
+        return res.json(updatedUser);
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
     }
-
-    res.status(404).json({ message: 'User not found' });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
 });
 
 // @route   GET api/profile/activity

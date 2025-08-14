@@ -66,7 +66,14 @@ export default ActivityPage;
 const Container = styled.div`
     padding: 2rem;
     max-width: 800px;
-    margin: 0 auto;
+    margin: 2rem auto;
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.5s ease, color 0.5s ease;
 `;
 
 const Header = styled.div`
@@ -74,8 +81,10 @@ const Header = styled.div`
     align-items: center;
     gap: 1rem;
     font-size: 2rem;
-    color: #333;
+    color: var(--text-primary);
     margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
 `;
 
 const ActivityList = styled.ul`
@@ -84,13 +93,21 @@ const ActivityList = styled.ul`
 `;
 
 const ActivityItem = styled.li`
-    background: #f9f9f9;
-    border-radius: 8px;
-    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1.5rem;
     margin-bottom: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid transparent;
+
+    &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        border-color: var(--primary-blue);
+    }
 `;
 
 const ActivityInfo = styled.div``;
@@ -98,14 +115,17 @@ const ActivityInfo = styled.div``;
 const ActivityType = styled.h3`
     text-transform: capitalize;
     margin: 0 0 0.5rem 0;
+    color: var(--accent-blue);
 `;
 
 const ActivityDescription = styled.p`
     margin: 0;
-    color: #666;
+    color: var(--text-secondary);
 `;
 
 const ActivityTimestamp = styled.span`
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.9rem;
+    white-space: nowrap;
+    margin-left: 1rem;
 `;

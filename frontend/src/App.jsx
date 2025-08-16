@@ -9,7 +9,6 @@ import SignUp from './components/SignUp';
 import SignIn from './components/SignIn';
 import Dashboard from './components/Dashboard';
 import Profile from './components/Profile.jsx';
-import OAuthCallback from './components/OAuthCallback.jsx';
 import ActivityPage from './components/ActivityPage.jsx';
 import ForgotPassword from './components/ForgotPassword.jsx';
 
@@ -45,7 +44,6 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/oauth-callback" element={<OAuthCallback />} />
         <Route 
             path="/dashboard" 
             element={<PrivateRoute><Dashboard /></PrivateRoute>}

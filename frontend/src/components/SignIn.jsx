@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { toast } from 'react-toastify';
-import { FaSyncAlt, FaFacebookF, FaTwitter, FaLinkedinIn, FaGithub } from 'react-icons/fa';
+import { FaSyncAlt, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { account } from '../utils/appwrite'; // Import from our utility file
-import { Client, Account } from "appwrite"; 
-
+import { useGoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 // --- Keyframes (Animations) ---
 const float = keyframes`
@@ -38,10 +38,16 @@ const SignIn = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [stars, setStars] = useState([]);
   const [errorMessage, setErrorMessage] = useState(''); // State for error message
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailValue, setEmailValue] = useState('');
+  const [passwordValue, setPasswordValue] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
-
-
-
+  
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
 
   useEffect(() => {
     const newStars = [];
@@ -54,6 +60,25 @@ const SignIn = () => {
       });
     }
     setStars(newStars);
+    
+    // Check for logout message
+    const logoutMessage = localStorage.getItem('logoutMessage');
+    if (logoutMessage) {
+      toast.info(logoutMessage);
+      localStorage.removeItem('logoutMessage');
+    }
+    
+    // Load remembered email if it exists
+    const remembered = localStorage.getItem('rememberMe');
+    if (remembered) {
+      try {
+        const { email } = JSON.parse(remembered);
+        setEmailValue(email);
+        setRememberMe(true);
+      } catch (error) {
+        console.error('Error parsing remembered email:', error);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -81,14 +106,22 @@ const SignIn = () => {
 
     setIsSubmitting(true);
     setErrorMessage(''); // Clear previous error message
-    const form = e.target;
-    const email = form.querySelector('input[type="email"]').value;
-    const password = form.querySelector('input[type="password"]').value;
-    const firstName = isSignUp ? form.querySelector('input[name="firstName"]').value : null;
-    const lastName = isSignUp ? form.querySelector('input[name="lastName"]').value : null;
-    const username = isSignUp ? form.querySelector('input[name="username"]').value : null;
-  const rememberMeInput = form.querySelector('input[name="rememberMe"]');
-  const rememberMe = rememberMeInput ? rememberMeInput.checked : false;
+
+    // Get values directly from state
+    const email = emailValue;
+    const password = passwordValue;
+    
+    // Get other form values if in signup mode
+    const firstName = isSignUp ? e.target.querySelector('input[name="firstName"]').value : null;
+    const lastName = isSignUp ? e.target.querySelector('input[name="lastName"]').value : null;
+    const username = isSignUp ? e.target.querySelector('input[name="username"]').value : null;
+    
+    // Check if passwords match in signup mode
+    if (isSignUp && passwordValue !== confirmPasswordRef.current.value) {
+      setErrorMessage('Passwords do not match');
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       if (isSignUp) {
@@ -104,9 +137,11 @@ const SignIn = () => {
           throw new Error(data.message || 'Sign-up failed');
         }
 
-        alert('Sign-up successful! Redirecting to sign-in page...');
+        toast.success('Sign-up successful! Please sign in.');
         setIsSignUp(false); // Switch back to Sign In mode
-        navigate('/signin'); // Redirect to sign-in page
+        // Clear form fields
+        setEmailValue('');
+        setPasswordValue('');
       } else {
         // Call sign-in API
         const response = await fetch('http://localhost:5000/api/auth/signin', {
@@ -127,6 +162,7 @@ const SignIn = () => {
         }
 
         localStorage.setItem('token', data.token); // Store the token
+        localStorage.setItem('user', JSON.stringify(data.user)); // Store user data
         localStorage.setItem('justLoggedIn', 'true'); // Flag for Dashboard toast
         navigate('/dashboard');
       }
@@ -137,18 +173,48 @@ const SignIn = () => {
     }
   };
 
-    const handleGoogleSignIn = () => {
-    setIsGoogleLoading(true);
-    setErrorMessage('');
-    // Correctly point to frontend routes for success and failure
-    account.createOAuth2Session(
-      'google',
-      `${window.location.origin}/dashboard`, // On success, go to the dashboard
-      `${window.location.origin}/signin`     // On failure, return to the sign-in page
-    );
-  };
+  const handleGoogleSignIn = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsGoogleLoading(true);
+      try {
+        const userInfo = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        });
 
+        const { email, given_name, family_name } = userInfo.data;
 
+        // Now, send this information to your backend to either sign up or sign in the user
+        const response = await fetch('http://localhost:5000/api/auth/google-signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            firstName: given_name,
+            lastName: family_name,
+            googleId: userInfo.data.sub,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Google sign-in failed');
+        }
+
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('justLoggedIn', 'true');
+        navigate('/dashboard');
+      } catch (error) {
+        setErrorMessage(error.message);
+      } finally {
+        setIsGoogleLoading(false);
+      }
+    },
+    onError: () => {
+      setErrorMessage('Google login failed. Please try again.');
+      setIsGoogleLoading(false);
+    },
+  });
 
   return (
     <Container>
@@ -215,25 +281,63 @@ const SignIn = () => {
             )}
             <FormGroup>
               <label>Email</label>
-              <input type="email" placeholder="Enter your email" required />
+              <input 
+                type="email" 
+                placeholder="Enter your email" 
+                required 
+                ref={emailRef}
+                value={emailValue}
+                onChange={(e) => setEmailValue(e.target.value)}
+                style={{ color: 'black' }}
+              />
             </FormGroup>
 
             <FormGroup>
               <label>Password</label>
-              <input type="password" placeholder="Enter your password" required />
+              <PasswordInputWrapper>
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Enter your password" 
+                  required 
+                  ref={passwordRef}
+                  value={passwordValue}
+                  onChange={(e) => setPasswordValue(e.target.value)}
+                  style={{ color: 'black' }}
+                />
+                <PasswordToggle onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </PasswordToggle>
+              </PasswordInputWrapper>
             </FormGroup>
 
             {isSignUp && (
               <FormGroup>
                 <label>Confirm Password</label>
-                <input type="password" placeholder="Confirm your password" required />
+                <PasswordInputWrapper>
+                  <input 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    placeholder="Confirm your password" 
+                    required 
+                    ref={confirmPasswordRef}
+                    style={{ color: 'black' }}
+                  />
+                  <PasswordToggle onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                  </PasswordToggle>
+                </PasswordInputWrapper>
               </FormGroup>
             )}
 
             {!isSignUp && (
               <RememberForgot>
                 <RememberMe>
-                  <input type="checkbox" id="rememberCheckbox" name="rememberMe" />
+                  <input 
+                    type="checkbox" 
+                    id="rememberCheckbox" 
+                    name="rememberMe" 
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
                   <label htmlFor="rememberCheckbox">Remember me</label>
                 </RememberMe>
                 <ForgotPassword>
@@ -248,17 +352,15 @@ const SignIn = () => {
 
             <Divider>Or</Divider>
 
-            <GoogleBtn type="button" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+            <GoogleBtn type="button" onClick={() => handleGoogleSignIn()} disabled={isGoogleLoading}>
               <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M18 9.2c0-.7-.1-1.4-.2-2H9.2v3.9h4.9c-.2 1.1-.9 2-1.8 2.6v2.1h2.9c1.7-1.6 2.6-3.9 2.6-6.6z" /><path fill="#34A853" d="M9.2 18c2.4 0 4.5-.8 6-2.2l-2.9-2.1c-.8.6-1.9.9-3.1.9-2.4 0-4.4-1.6-5.1-3.9H1.1v2.1C2.6 15.9 5.7 18 9.2 18z" /><path fill="#FBBC04" d="M4.1 10.7c-.2-.6-.2-1.2 0-1.8V6.8H1.1c-.7 1.4-.7 3.1 0 4.5l3-2.6z" /><path fill="#EA4335" d="M9.2 3.6c1.3 0 2.5.4 3.4 1.3l2.5-2.5C13.7.7 11.6 0 9.2 0 5.7 0 2.6 2.1 1.1 5.4l3 2.1c.7-2.3 2.7-3.9 5.1-3.9z" /></svg>
               <span>{isGoogleLoading ? 'Signing in...' : (isSignUp ? 'Sign up with Google' : 'Continue with Google')}</span>
             </GoogleBtn>
 
-            <SocialLogin>
-              <SocialBtn href="#"><FaFacebookF /></SocialBtn>
-              <SocialBtn href="#"><FaTwitter /></SocialBtn>
-              <SocialBtn href="#"><FaLinkedinIn /></SocialBtn>
-              <SocialBtn href="#"><FaGithub /></SocialBtn>
-            </SocialLogin>
+            <GithubBtn type="button" onClick={() => window.location.href='/api/auth/github'}>
+              <FaGithub />
+              <span>Continue with Github</span>
+            </GithubBtn>
 
             <SignupLink>
               {isSignUp ? 'Already have an account? ' : 'Dont have an account? '}
@@ -439,11 +541,32 @@ const FormGroup = styled.div`
     font-size: 14px;
     transition: all 0.3s ease;
     background: white;
+    color: #333 !important;
+    &::placeholder {
+      color: #aaa;
+    }
     &:focus {
       outline: none;
       border-color: #ff6b6b;
       box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
     }
+  }
+`;
+
+const PasswordInputWrapper = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
+const PasswordToggle = styled.div`
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #999;
+  &:hover {
+    color: #666;
   }
 `;
 
@@ -516,6 +639,16 @@ const GoogleBtn = styled(Button)`
   }
   &:active:not(:disabled) {
     background: #f1f3f4;
+  }
+`;
+
+const GithubBtn = styled(Button)`
+  background: #333;
+  color: white;
+  margin-top: 10px;
+  &:hover:not(:disabled) {
+    background: #444;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 `;
 
@@ -602,3 +735,4 @@ const ErrorMessage = styled.div`
   font-size: 0.9rem;
   text-align: center;
 `;
+

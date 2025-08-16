@@ -13,7 +13,14 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-app.use(cors());
+
+// Allow requests from your frontend development server
+const corsOptions = {
+  origin: 'http://localhost:5173', // or your frontend's port
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Serve static files from the 'uploads' directory

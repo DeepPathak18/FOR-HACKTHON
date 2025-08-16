@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaUserCircle, FaSignOutAlt, FaBell, FaSun, FaMoon } from 'react-icons/fa';
 import { useTheme } from '../utils/useTheme';
+import styled from 'styled-components';
 
 const TechTonicHackathon = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -16,6 +17,7 @@ const TechTonicHackathon = () => {
     const [user, setUser] = useState(null);
     const [showProfileModal, setShowProfileModal] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
     const { theme, toggleTheme, isDark, isLight } = useTheme();
 
     // Enhanced theme toggle with notification
@@ -32,7 +34,6 @@ const TechTonicHackathon = () => {
             draggable: true,
         });
     };
-
 
     // --- SIDE EFFECTS (Lifecycle Management) ---
 
@@ -167,6 +168,46 @@ const TechTonicHackathon = () => {
 
         fetchUserData();
     }, [navigate]);
+
+    // Effect to handle GitHub login token
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const token = params.get('token');
+        if (token) {
+            localStorage.setItem('token', token);
+            // Clean the URL
+            navigate('/dashboard', { replace: true });
+        }
+
+        // Handle toast for regular login
+        const justLoggedIn = localStorage.getItem('justLoggedIn');
+        if (justLoggedIn) {
+            toast.success('Signed in successfully!');
+            localStorage.removeItem('justLoggedIn');
+        }
+
+        // Fetch user profile
+        const fetchProfile = async () => {
+            const storedToken = localStorage.getItem('token');
+            if (storedToken) {
+                try {
+                    // You would typically have an API endpoint to get the user profile
+                    // For now, we can decode the token if it contains user info,
+                    // or you can create a /api/profile/me endpoint.
+                    // This is a placeholder, assuming you have a way to get user data.
+                    // const response = await fetch('/api/profile/me', {
+                    //   headers: { 'Authorization': `Bearer ${storedToken}` }
+                    // });
+                    // const data = await response.json();
+                    // setUser(data);
+                } catch (error) {
+                    console.error('Failed to fetch profile', error);
+                }
+            }
+        };
+
+        fetchProfile();
+    }, [location, navigate]);
 
     // --- EVENT HANDLERS ---
 
@@ -1494,10 +1535,6 @@ const TechTonicHackathon = () => {
             font-size: 2rem;
             color: var(--primary-blue);
             font-weight: 900;
-            background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
         .rule-item h3 {
             font-size: 1.18rem;
@@ -1919,3 +1956,36 @@ const TechTonicHackathon = () => {
     );
 }
 export default TechTonicHackathon;
+
+const DashboardContainer = styled.div`
+  padding: 40px;
+  background-color: #f4f7f6;
+  min-height: 100vh;
+`;
+
+const Header = styled.div`
+  margin-bottom: 40px;
+  h1 {
+    font-size: 2.5rem;
+    color: #333;
+  }
+  p {
+    color: #777;
+  }
+`;
+
+const Content = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+`;
+
+const Card = styled.div`
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  h2 {
+    margin-bottom: 15px;
+  }
+`;

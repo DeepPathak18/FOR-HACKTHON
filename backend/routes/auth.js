@@ -156,48 +156,156 @@ router.post('/signin', async (req, res) => {
     }
 });
 
+// Google Sign-In
+router.post('/google-signin', async (req, res) => {
+    const { email, firstName, lastName, googleId } = req.body;
 
-
-// Google OAuth route
-router.post('/google', async (req, res) => {
-    const { email, name, appwriteId } = req.body;
     try {
         let user = await User.findOne({ email });
+
         if (!user) {
+            // If user doesn't exist, create a new one
             user = new User({
-                firstName: name,
                 email,
-                appwriteId,
+                firstName,
+                lastName,
+                googleId,
+                // You might want to generate a random password or handle this differently
+                password: Math.random().toString(36).slice(-8),
             });
             await user.save();
         }
-        
-        // --- ADDED JWT GENERATION ON OAUTH ---
-        // <-- 2. Create the payload for the token
+
+        // Log login activity
+        const loginActivity = new Activity({
+            user: user._id,
+            activityType: 'login',
+            description: 'User logged in via Google.',
+        });
+        await loginActivity.save();
+
+        // Create JWT payload
         const payload = {
             user: {
-                id: user.id
-            }
+                id: user.id,
+            },
         };
 
-        // <-- 3. Sign the token
+        // Sign the token
         jwt.sign(
             payload,
             process.env.JWT_SECRET,
             { expiresIn: '5h' },
             (err, token) => {
                 if (err) throw err;
-                // <-- 4. Send the token back
-                res.status(200).json({ message: 'Google login successful', token });
+                res.json({
+                    message: 'Sign in successful',
+                    token,
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        username: user.username,
+                    },
+                });
             }
         );
-        // --- END OF JWT GENERATION ---
-        
     } catch (err) {
-        console.error('OAuth error:', err);
+        console.error('Google Sign-in error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+// GitHub OAuth
+router.get('/github', (req, res) => {
+  const url = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&scope=user:email`;
+  res.redirect(url);
+});
+
+router.get('/github/callback', async (req, res) => {
+  const { code } = req.query;
+
+  try {
+    // Exchange code for access token
+    const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
+      client_id: process.env.GITHUB_CLIENT_ID,
+      client_secret: process.env.GITHUB_CLIENT_SECRET,
+      code,
+    }, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    const { access_token } = tokenResponse.data;
+
+    // Fetch user info from GitHub
+    const userResponse = await axios.get('https://api.github.com/user', {
+      headers: {
+        'Authorization': `token ${access_token}`
+      }
+    });
+
+    const githubUser = userResponse.data;
+    let email = githubUser.email;
+
+    // If email is null, fetch from the primary email endpoint
+    if (!email) {
+      const emailsResponse = await axios.get('https://api.github.com/user/emails', {
+        headers: {
+          'Authorization': `token ${access_token}`
+        }
+      });
+      const primaryEmail = emailsResponse.data.find(e => e.primary && e.verified);
+      if (primaryEmail) {
+        email = primaryEmail.email;
+      }
+    }
+
+    if (!email) {
+      return res.status(400).send("Could not retrieve a verified email from GitHub.");
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = new User({
+        email,
+        firstName: githubUser.name || githubUser.login,
+        lastName: '',
+        githubId: githubUser.id,
+        password: Math.random().toString(36).slice(-8),
+      });
+      await user.save();
+    }
+
+    // Log login activity
+    const loginActivity = new Activity({
+        user: user._id,
+        activityType: 'login',
+        description: 'User logged in via GitHub.',
+    });
+    await loginActivity.save();
+
+    // Create JWT
+    const payload = {
+      user: {
+        id: user.id,
+      },
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' });
+
+    // Redirect to frontend with token
+    res.redirect(`http://localhost:5173/dashboard?token=${token}`);
+
+  } catch (err) {
+    console.error('GitHub OAuth error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 // 1. Create an API client (e.g., api.js)
 const api = axios.create({

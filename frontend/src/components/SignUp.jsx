@@ -199,25 +199,68 @@ const bounceIn = keyframes`
   100% { transform: translateY(0) scale(1); }
 `;
 
+const shimmer = keyframes`
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+`;
+
 // Styled Components
 const PageContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #f0f2f5;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 25%, #7DD3FC 50%, #38BDF8 75%, #0EA5E9 100%);
+  font-family: 'Inter', sans-serif;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 80%, rgba(37, 99, 235, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 `;
 
 const SignUpCard = styled.div`
-  background: #ffffff;
-  padding: 32px 24px;
-  border-radius: 15px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 40px 32px;
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.1),
+    0 8px 32px rgba(37, 99, 235, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
   width: 100%;
-  max-width: 350px;
+  max-width: 400px;
   text-align: center;
-  animation: ${fadeIn} 0.5s ease-out;
+  animation: ${fadeIn} 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: ${shimmer} 3s infinite;
+  }
 `;
 
 const ErrorShakeSignUpCard = styled(SignUpCard)`
@@ -225,16 +268,21 @@ const ErrorShakeSignUpCard = styled(SignUpCard)`
 `;
 
 const Title = styled.h1`
-  color: #333;
+  color: #1E40AF;
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 10px;
+  background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 `;
 
 const Subtitle = styled.p`
-  color: #777;
+  color: #6B7280;
   font-size: 16px;
   margin-bottom: 30px;
+  font-weight: 500;
 `;
 
 const StyledForm = styled.form`
@@ -261,43 +309,91 @@ const NameRow = styled.div`
 const Input = styled.input`
   width: 100%;
   padding: 14px 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 2px solid rgba(59, 130, 246, 0.1);
+  border-radius: 12px;
   font-size: 16px;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.8);
+  color: #1E40AF;
+  font-weight: 500;
+  
+  &::placeholder {
+    color: #9CA3AF;
+    font-weight: 400;
+  }
 `;
 
 const EnhancedInput = styled(Input)`
+  border: 2px solid rgba(59, 130, 246, 0.1);
+  background: rgba(255, 255, 255, 0.8);
+  color: #1E40AF;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &::placeholder {
+    color: #9CA3AF;
+    font-weight: 400;
+  }
+
   &:focus {
     outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 8px rgba(0, 123, 255, 0.7);
-    transform: scale(1.02);
-    transition: all 0.3s ease;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-1px);
+  }
+
+  &:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(255, 255, 255, 0.9);
   }
 `;
 
 const SubmitButton = styled.button`
   width: 100%;
-  padding: 15px;
-  background: #007bff;
+  padding: 16px;
+  background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  &:hover::before {
+    left: 100%;
+  }
 
   &:hover:not(:disabled) {
-    background: #0056b3;
+    background: linear-gradient(135deg, #1E40AF 0%, #1E3A8A 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
 
   &:disabled {
-    background: #a0c8ff;
+    background: #9CA3AF;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -319,23 +415,29 @@ const Divider = styled.div`
 
 
 const ErrorMessage = styled.div`
-  background: #ffe6e6;
-  color: #dc3545;
-  padding: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+  padding: 12px 16px;
   border-radius: 8px;
   margin-bottom: 20px;
   font-size: 14px;
+  font-weight: 500;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 `;
 
 const SmoothErrorMessage = styled(ErrorMessage)`
   opacity: 0;
   animation: ${fadeIn} 0.5s forwards;
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 `;
 
 const SignInText = styled.p`
   margin-top: 30px;
-  color: #777;
+  color: #6B7280;
   font-size: 14px;
+  font-weight: 500;
 `;
 
 const BackToHome = styled.div`
@@ -344,11 +446,13 @@ const BackToHome = styled.div`
 `;
 
 const StyledLink = styled(Link)`
-  color: #007bff;
+  color: #3B82F6;
   text-decoration: none;
   font-weight: 600;
+  transition: all 0.3s ease;
 
   &:hover {
+    color: #1E40AF;
     text-decoration: underline;
   }
 `;

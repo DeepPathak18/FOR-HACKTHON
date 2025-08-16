@@ -28,6 +28,11 @@ const slideIn = keyframes`
   100% { transform: translateX(0); opacity: 1; }
 `;
 
+const fadeIn = keyframes`
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+`;
+
 
 // --- React Component ---
 const SignIn = () => {
@@ -491,12 +496,24 @@ const BottomInfo = styled.div`
 
 const RightPanel = styled.div`
   flex: 1;
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 50%, #E2E8F0 100%);
   padding: 60px 80px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(30, 64, 175, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
 `;
 
 const animationRule = css`
@@ -532,23 +549,40 @@ const Welcome = styled.div`
 
 const FormGroup = styled.div`
   margin-bottom: 25px;
-  label { display: block; font-size: 14px; color: #333; margin-bottom: 8px; font-weight: 500; }
+  label { 
+    display: block; 
+    font-size: 14px; 
+    color: #1E40AF; 
+    margin-bottom: 8px; 
+    font-weight: 600; 
+  }
   input {
     width: 100%;
     padding: 15px;
-    border: 1px solid #e1e5e9;
-    border-radius: 8px;
+    border: 2px solid rgba(59, 130, 246, 0.1);
+    border-radius: 12px;
     font-size: 14px;
-    transition: all 0.3s ease;
-    background: white;
-    color: #333 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(255, 255, 255, 0.8);
+    color: #1E40AF !important;
+    font-weight: 500;
+    
     &::placeholder {
-      color: #aaa;
+      color: #9CA3AF;
+      font-weight: 400;
     }
+    
     &:focus {
       outline: none;
-      border-color: #ff6b6b;
-      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+      background: rgba(255, 255, 255, 0.95);
+      transform: translateY(-1px);
+    }
+    
+    &:hover {
+      border-color: rgba(59, 130, 246, 0.3);
+      background: rgba(255, 255, 255, 0.9);
     }
   }
 `;
@@ -584,15 +618,24 @@ const RememberMe = styled.div`
   input[type="checkbox"] {
     width: 16px;
     height: 16px;
-    accent-color: #ff6b6b;
+    accent-color: #3B82F6;
     cursor: pointer;
   }
-  label { font-size: 14px; color: #666; cursor: pointer; margin: 0; }
+  label { font-size: 14px; color: #6B7280; cursor: pointer; margin: 0; }
 `;
 
 const ForgotPassword = styled.div`
   margin: 0;
-  a { color: #666; font-size: 14px; text-decoration: none; &:hover { color: #ff6b6b; } }
+  a { 
+    color: #6B7280; 
+    font-size: 14px; 
+    text-decoration: none; 
+    transition: color 0.3s ease;
+    
+    &:hover { 
+      color: #3B82F6; 
+    } 
+  }
 `;
 
 const Button = styled.button`
@@ -617,38 +660,57 @@ const Button = styled.button`
 
 
 const SignInBtn = styled(Button)`
-  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
   color: white;
-  margin-bottom: 20px; /* Adjusted */
+  margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+  
   &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, #1E40AF 0%, #1E3A8A 100%);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
 `;
 
 const GoogleBtn = styled(Button)`
   background: white;
   color: #5f6368;
-  border: 1px solid #dadce0;
+  border: 2px solid rgba(59, 130, 246, 0.1);
   font-size: 14px;
   font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  
   &:hover:not(:disabled) {
-    background: #f8f9fa;
-    border-color: #c1c7cd;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: #F8FAFC;
+    border-color: #3B82F6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    transform: translateY(-1px);
   }
+  
   &:active:not(:disabled) {
-    background: #f1f3f4;
+    background: #F1F5F9;
+    transform: translateY(0);
   }
 `;
 
 const GithubBtn = styled(Button)`
-  background: #333;
+  background: linear-gradient(135deg, #374151 0%, #1F2937 100%);
   color: white;
   margin-top: 10px;
+  box-shadow: 0 4px 16px rgba(31, 41, 55, 0.3);
+  
   &:hover:not(:disabled) {
-    background: #444;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+    box-shadow: 0 6px 20px rgba(31, 41, 55, 0.4);
+    transform: translateY(-1px);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
 `;
 
@@ -699,14 +761,19 @@ const SocialBtn = styled.a`
 
 const SignupLink = styled.div`
   text-align: center;
-  color: #666;
+  color: #6B7280;
   font-size: 14px;
   a {
-    color: #ff6b6b;
+    color: #3B82F6;
     text-decoration: none;
     font-weight: 600;
     cursor: pointer;
-    &:hover { text-decoration: underline; }
+    transition: all 0.3s ease;
+    
+    &:hover { 
+      color: #1E40AF;
+      text-decoration: underline; 
+    }
   }
 `;
 
@@ -714,25 +781,37 @@ const ToggleFormButton = styled.button`
   position: absolute;
   top: 30px;
   right: 30px;
-  background: none;
-  border: none;
-  color: #666;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
   font-size: 24px;
   cursor: pointer;
   transition: all 0.3s ease;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  
   &:hover {
-    color: #ff6b6b;
-    transform: rotate(180deg);
+    color: #1E40AF;
+    transform: rotate(180deg) scale(1.1);
+    border-color: #3B82F6;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
   }
 `;
 
 const ErrorMessage = styled.div`
-  color: #ff4d4d;
-  background: #ffe6e6;
-  padding: 10px;
-  border-radius: 5px;
+  color: #EF4444;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 12px 16px;
+  border-radius: 8px;
   margin-bottom: 15px;
   font-size: 0.9rem;
   text-align: center;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  animation: ${fadeIn} 0.3s ease;
 `;
 

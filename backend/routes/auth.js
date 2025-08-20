@@ -298,7 +298,7 @@ router.get('/github/callback', async (req, res) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5h' });
 
     // Redirect to frontend with token
-    res.redirect(`http://localhost:5173/dashboard?token=${token}`);
+    res.redirect(`http://localhost:5173/auth/callback?token=${token}`);
 
   } catch (err) {
     console.error('GitHub OAuth error:', err);

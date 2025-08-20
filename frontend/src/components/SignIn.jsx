@@ -362,7 +362,7 @@ const SignIn = () => {
               <span>{isGoogleLoading ? 'Signing in...' : (isSignUp ? 'Sign up with Google' : 'Continue with Google')}</span>
             </GoogleBtn>
 
-            <GithubBtn type="button" onClick={() => window.location.href='/api/auth/github'}>
+            <GithubBtn type="button" onClick={() => window.location.href='http://localhost:5000/api/auth/github'}>
               <FaGithub />
               <span>Continue with Github</span>
             </GithubBtn>

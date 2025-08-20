@@ -52,6 +52,11 @@ const UserSchema = new mongoose.Schema({
         required: false,
         default: '',
     },
+    githubId: {
+        type: String,
+        unique: true,
+        sparse: true,
+    },
     // Password reset fields
     resetPasswordToken: {
         type: String,

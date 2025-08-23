@@ -90,7 +90,7 @@ const LandingPage = () => {
       {/* Floating Particles */}
       <ParticleContainer>
         {[...Array(20)].map((_, i) => (
-          <Particle key={i} delay={i * 0.1} />
+          <Particle key={i} $delay={i * 0.1} />
         ))}
       </ParticleContainer>
 
@@ -305,7 +305,7 @@ const Particle = styled.div`
   background: rgba(59, 130, 246, 0.6);
   border-radius: 50%;
   animation: ${float} 6s infinite ease-in-out;
-  animation-delay: ${props => props.delay}s;
+  animation-delay: ${props => props.$delay}s;
   
   &:nth-child(odd) {
     left: ${props => Math.random() * 100}%;

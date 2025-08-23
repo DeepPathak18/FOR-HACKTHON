@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useTheme } from '../utils/useTheme';
 
 // This is the initial message content taken from your screenshot.
 
@@ -28,8 +29,132 @@ const ChatPage = () => {
   // Ref to the end of the messages list for auto-scrolling
   const messagesEndRef = useRef(null);
 
+  const { theme } = useTheme();
+
+  const themeColors = {
+    light: {
+      textColor: '#333',
+      bgColor: '#ffffff',
+      containerBorder: '#ddd',
+      headerBg: '#f8f8f8',
+      messagesBg: '#f0fff0',
+      userMessageBg: '#e0f7fa',
+      aiMessageBg: '#f0f0f0',
+      inputBorder: '#ccc',
+      buttonBg: '#f0f0f0',
+      buttonHoverBg: '#e0e0e0',
+    },
+    dark: {
+      textColor: '#e0e0e0',
+      bgColor: '#1a202c',
+      containerBorder: '#4a5568',
+      headerBg: '#2d3748',
+      messagesBg: '#2d3748',
+      userMessageBg: '#4a5568',
+      aiMessageBg: '#2c3e50',
+      inputBorder: '#4a5568',
+      buttonBg: '#4a5568',
+      buttonHoverBg: '#6a7588',
+    },
+  };
+
+    const currentTheme = themeColors[theme];
+
+  // CSS styles to mimic the screenshot
+  const styles = {
+    chatContainer: {
+      fontFamily: 'sans-serif',
+      maxWidth: '800px',
+      margin: '40px auto',
+      border: `1px solid ${currentTheme.containerBorder}`,
+      borderRadius: '8px',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '80vh',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+      backgroundColor: currentTheme.bgColor,
+      color: currentTheme.textColor,
+    },
+    header: {
+      padding: '10px 20px',
+      borderBottom: `1px solid ${currentTheme.containerBorder}`,
+      backgroundColor: currentTheme.headerBg,
+      color: currentTheme.textColor,
+    },
+    title: {
+      margin: '0 0 5px 0',
+      color: currentTheme.textColor,
+    },
+    subtitle: {
+      margin: 0,
+      fontSize: '0.9em',
+      color: currentTheme.textColor, // Adjusted to use theme color
+    },
+    messagesContainer: {
+      flex: 1,
+      padding: '20px',
+      backgroundColor: currentTheme.messagesBg,
+      overflowY: 'auto',
+      lineHeight: '1.6',
+      display: 'flex',
+      flexDirection: 'column',
+      color: currentTheme.textColor, // Ensure message text color is themed
+    },
+    message: {
+      marginBottom: '10px',
+      whiteSpace: 'pre-wrap', // Preserves line breaks and spacing
+    },
+    userMessage: {
+      backgroundColor: currentTheme.userMessageBg,
+      padding: '8px 12px',
+      borderRadius: '10px',
+      alignSelf: 'flex-end', // Align to the right
+      maxWidth: '70%',
+      marginBottom: '10px',
+      whiteSpace: 'pre-wrap',
+      color: currentTheme.textColor, // Ensure user message text color is themed
+    },
+    aiMessage: {
+      backgroundColor: currentTheme.aiMessageBg,
+      padding: '8px 12px',
+      borderRadius: '10px',
+      alignSelf: 'flex-start', // Align to the left
+      maxWidth: '70%',
+      marginBottom: '10px',
+      whiteSpace: 'pre-wrap',
+      color: currentTheme.textColor, // Ensure AI message text color is themed
+    },
+    inputForm: {
+      display: 'flex',
+      padding: '10px',
+      borderTop: `1px solid ${currentTheme.containerBorder}`,
+      backgroundColor: currentTheme.headerBg, // Use header background for input form area
+    },
+    input: {
+      flex: 1,
+      padding: '10px',
+      fontSize: '1em',
+      border: `1px solid ${currentTheme.inputBorder}`,
+      borderRadius: '4px',
+      marginRight: '10px',
+      backgroundColor: currentTheme.bgColor, // Input background
+      color: currentTheme.textColor, // Input text color
+    },
+    sendButton: {
+      padding: '10px 20px',
+      fontSize: '1em',
+      border: `1px solid ${currentTheme.inputBorder}`,
+      borderRadius: '4px',
+      cursor: 'pointer',
+      backgroundColor: currentTheme.buttonBg,
+      color: currentTheme.textColor, // Button text color
+    },
+  };
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   // Effect to scroll to the bottom whenever messages change
@@ -114,83 +239,6 @@ const ChatPage = () => {
 };
 
 
-// CSS styles to mimic the screenshot
-const styles = {
-  chatContainer: {
-    fontFamily: 'sans-serif',
-    maxWidth: '800px',
-    margin: '40px auto',
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '80vh',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  },
-  header: {
-    padding: '10px 20px',
-    borderBottom: '1px solid #ddd',
-  },
-  title: {
-    margin: '0 0 5px 0',
-  },
-  subtitle: {
-    margin: 0,
-    fontSize: '0.9em',
-    color: '#555',
-  },
-  messagesContainer: {
-    flex: 1,
-    padding: '20px',
-    backgroundColor: '#f0fff0', // Light green background
-    overflowY: 'auto',
-    lineHeight: '1.6',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  message: {
-    marginBottom: '10px',
-    whiteSpace: 'pre-wrap', // Preserves line breaks and spacing
-  },
-  userMessage: {
-    backgroundColor: '#e0f7fa', // Light blue for user
-    padding: '8px 12px',
-    borderRadius: '10px',
-    alignSelf: 'flex-end', // Align to the right
-    maxWidth: '70%',
-    marginBottom: '10px',
-    whiteSpace: 'pre-wrap',
-  },
-  aiMessage: {
-    backgroundColor: '#f0f0f0', // Light gray for AI
-    padding: '8px 12px',
-    borderRadius: '10px',
-    alignSelf: 'flex-start', // Align to the left
-    maxWidth: '70%',
-    marginBottom: '10px',
-    whiteSpace: 'pre-wrap',
-  },
-  inputForm: {
-    display: 'flex',
-    padding: '10px',
-    borderTop: '1px solid #ddd',
-  },
-  input: {
-    flex: 1,
-    padding: '10px',
-    fontSize: '1em',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    marginRight: '10px',
-  },
-  sendButton: {
-    padding: '10px 20px',
-    fontSize: '1em',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    backgroundColor: '#f0f0f0',
-  },
-};
+
 
 export default ChatPage;

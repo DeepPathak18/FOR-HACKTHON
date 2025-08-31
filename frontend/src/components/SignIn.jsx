@@ -49,7 +49,7 @@ const SignIn = () => {
   const [passwordValue, setPasswordValue] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
-  
+
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
   const confirmPasswordRef = useRef(null);
@@ -65,14 +65,14 @@ const SignIn = () => {
       });
     }
     setStars(newStars);
-    
+
     // Check for logout message
     const logoutMessage = localStorage.getItem('logoutMessage');
     if (logoutMessage) {
       toast.info(logoutMessage);
       localStorage.removeItem('logoutMessage');
     }
-    
+
     // Load remembered email if it exists
     const remembered = localStorage.getItem('rememberMe');
     if (remembered) {
@@ -115,12 +115,12 @@ const SignIn = () => {
     // Get values directly from state
     const email = emailValue;
     const password = passwordValue;
-    
+
     // Get other form values if in signup mode
     const firstName = isSignUp ? e.target.querySelector('input[name="firstName"]').value : null;
     const lastName = isSignUp ? e.target.querySelector('input[name="lastName"]').value : null;
     const username = isSignUp ? e.target.querySelector('input[name="username"]').value : null;
-    
+
     // Check if passwords match in signup mode
     if (isSignUp && passwordValue !== confirmPasswordRef.current.value) {
       setErrorMessage('Passwords do not match');
@@ -131,14 +131,19 @@ const SignIn = () => {
     try {
       if (isSignUp) {
         // Call sign-up API
+        console.log('Attempting sign-up for:', email); // Added log
         const response = await fetch('http://localhost:5000/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password, firstName, lastName, username }),
         });
 
+        console.log('Sign-up API response:', response); // Added log
         const data = await response.json();
+        console.log('Sign-up API response data:', data); // Added log
+
         if (!response.ok) {
+          console.error('Sign-up failed with response not ok:', data); // Added log
           throw new Error(data.message || 'Sign-up failed');
         }
 
@@ -147,31 +152,50 @@ const SignIn = () => {
         // Clear form fields
         setEmailValue('');
         setPasswordValue('');
-      } else {
+      }
+      else {
         // Call sign-in API
+        console.log('Attempting sign-in for:', email); // Added log
         const response = await fetch('http://localhost:5000/api/auth/signin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
         });
 
+        console.log('Sign-in API response:', response); // Added log
         const data = await response.json();
+        console.log('Sign-in API response data:', data); // Added log
+
         if (!response.ok) {
+          console.error('Sign-in failed with response not ok:', data); // Added log
           throw new Error(data.message || 'Sign-in failed');
         }
 
         if (rememberMe) {
-          localStorage.setItem('rememberMe', JSON.stringify({ email })); // Store email in local storage
+          localStorage.setItem('rememberMe', JSON.stringify({ email })); // Store email
         } else {
-          localStorage.removeItem('rememberMe'); // Clear "Remember Me" data
+          localStorage.removeItem('rememberMe');
         }
 
-        navigate('/verify-otp', { state: { email: data.email } });
+        // --- TEST USER BYPASS ---
+        if (email === "test@example.com") {
+          // Save token and user info
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+
+          // ✅ Navigate to dashboard
+          navigate("/dashboard");
+        } else {
+          // Normal users -> OTP verification page
+          navigate("/verify-otp", { state: { email: data.email } });
+        }
+        setIsSubmitting(false); // Reset submitting state on success
+
       }
     } catch (error) {
-      setErrorMessage(error.message); // Set error message
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error occurred during form submission:", error); // Modified log
+      setIsSubmitting(false); // Ensure state is reset on error too
+      setErrorMessage(error.message); // Display error message to user
     }
   };
 
@@ -290,10 +314,10 @@ const SignIn = () => {
             )}
             <FormGroup>
               <label>Email</label>
-              <input 
-                type="email" 
-                placeholder="Enter your email" 
-                required 
+              <input
+                type="email"
+                placeholder="Enter your email"
+                required
                 ref={emailRef}
                 value={emailValue}
                 onChange={(e) => setEmailValue(e.target.value)}
@@ -304,10 +328,10 @@ const SignIn = () => {
             <FormGroup>
               <label>Password</label>
               <PasswordInputWrapper>
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="Enter your password" 
-                  required 
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  required
                   ref={passwordRef}
                   value={passwordValue}
                   onChange={(e) => setPasswordValue(e.target.value)}
@@ -323,10 +347,10 @@ const SignIn = () => {
               <FormGroup>
                 <label>Confirm Password</label>
                 <PasswordInputWrapper>
-                  <input 
-                    type={showConfirmPassword ? "text" : "password"} 
-                    placeholder="Confirm your password" 
-                    required 
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your password"
+                    required
                     ref={confirmPasswordRef}
                     style={{ color: 'black' }}
                   />
@@ -340,10 +364,10 @@ const SignIn = () => {
             {!isSignUp && (
               <RememberForgot>
                 <RememberMe>
-                  <input 
-                    type="checkbox" 
-                    id="rememberCheckbox" 
-                    name="rememberMe" 
+                  <input
+                    type="checkbox"
+                    id="rememberCheckbox"
+                    name="rememberMe"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
                   />

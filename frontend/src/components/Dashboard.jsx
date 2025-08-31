@@ -8,7 +8,7 @@ import { useTheme } from '../utils/useTheme';
 
 
 const TechTonicHackathon = ({ user, onLogout }) => {
-
+    const navigate = useNavigate();
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);

@@ -8,8 +8,8 @@ import Toast from './Toast';
 const getProfile = async (email) => {
     try {
         console.log('🔍 Fetching profile for email:', email);
-        // Temporarily use full URL to test if proxy is working
-        const response = await fetch(`http://localhost:5000/api/profile/me?email=${encodeURIComponent(email)}`);
+    // Use relative API path so Vite dev server proxy handles CORS
+    const response = await fetch(`/api/profile/me?email=${encodeURIComponent(email)}`);
         console.log('📡 Profile API response status:', response.status);
         console.log('📡 Profile API response headers:', response.headers);
         
@@ -31,8 +31,8 @@ const updateProfile = async (email, formData) => {
     try {
         console.log('🔄 Updating profile for email:', email);
         console.log('📝 Update data:', formData);
-        // Temporarily use full URL to test if proxy is working
-        const response = await fetch('http://localhost:5000/api/profile/me/update', {
+    // Use relative API path so Vite dev server proxy handles CORS
+    const response = await fetch('/api/profile/me/update', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -111,7 +111,7 @@ const Profile = () => {
 
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5000/api/profile/me', {
+        const response = await fetch('/api/profile/me', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -197,7 +197,7 @@ const Profile = () => {
 
     try {
       // First, update the profile data
-      const profileUpdateResponse = await fetch('http://localhost:5000/api/profile/me', {
+      const profileUpdateResponse = await fetch('/api/profile/me', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -217,7 +217,7 @@ const Profile = () => {
         const formData = new FormData();
         formData.append('avatar', avatarFile);
 
-        const avatarUpdateResponse = await fetch('http://localhost:5000/api/profile/avatar', {
+        const avatarUpdateResponse = await fetch('/api/profile/avatar', {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -269,7 +269,7 @@ const Profile = () => {
       
       <ProfileCard>
         <AvatarContainer>
-            <Avatar src={user?.avatar ? `http://localhost:5000${user.avatar}` : 'https://placehold.co/150x150/E0F7FA/01579B?text=User'} alt="Avatar" />
+            <Avatar src={user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `http://localhost:5000${user.avatar}`) : 'https://placehold.co/150x150/E0F7FA/01579B?text=User'} alt="Avatar" />
             <AvatarOverlay onClick={() => setEditMode(true)}>
                 <FaCamera />
             </AvatarOverlay>

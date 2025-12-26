@@ -5,8 +5,6 @@ import { toast } from 'react-toastify';
 import { FaUserCircle, FaSignOutAlt, FaBell, FaSun, FaMoon, FaRobot } from 'react-icons/fa';
 import { useTheme } from '../utils/useTheme';
 
-
-
 const TechTonicHackathon = ({ user, onLogout }) => {
     const navigate = useNavigate();
 
@@ -19,7 +17,7 @@ const TechTonicHackathon = ({ user, onLogout }) => {
         seconds: '00',
     });
     const [showProfileModal, setShowProfileModal] = useState(false);
-    
+
 
     const { theme, toggleTheme, isDark, isLight } = useTheme();
 
@@ -1524,90 +1522,10 @@ const TechTonicHackathon = ({ user, onLogout }) => {
                 <div className="particle"></div>
                 <div className="particle"></div>
             </div>
-
-            <nav className={isScrolled ? 'navbar scrolled' : 'navbar'} id="navbar">
-                <div className="nav-container">
-                    <a href="#home" className="nav-logo" onClick={closeMenu}>
-                        {/* LOGO.png removed: Add your logo image here if available */}
-                        <span style={{ fontWeight: 800, fontSize: '1.5rem' }}>Tech Tonic</span>
-                    </a>
-                    <ul className={isMenuOpen ? 'nav-menu active' : 'nav-menu'} id="nav-menu">
-                        <li><a href="#home" className="nav-link" onClick={closeMenu}>Home</a></li>
-                        <li><a href="#about" className="nav-link" onClick={closeMenu}>About</a></li>
-                        <li><a href="#timeline" className="nav-link" onClick={closeMenu}>Timeline</a></li>
-                        <li><a href="#rules" className="nav-link" onClick={closeMenu}>Rules</a></li>
-                        <li><a href="#domains" className="nav-link" onClick={closeMenu}>Domains</a></li>
-                        <li><a href="#prizes" className="nav-link" onClick={closeMenu}>Prizes</a></li>
-                        <li><a href="#register" className="nav-link" onClick={closeMenu}>Register</a></li>
-                    </ul>
-                    <div className={isMenuOpen ? 'hamburger open' : 'hamburger'} id="hamburger" onClick={handleHamburgerClick}>
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                </div>
-            </nav>
-            <br />
-
             <section id="home" className="hero">
                 <div className="hero-grid"></div>
                 <div className="hero-content">
-                    <div className="hero-badge">
-                        <span>🚀</span>
-                        <span>Registration Now Open</span>
-                    </div>
-                    <h1 className="hero-title">
-                        <span className="gradient-text">Tech-Tonic Hackathon</span>
-                    </h1>
-                    <p className="hero-subtitle">
-                        Transforming ideas, Building future
-                    </p>
-
-                    <div className="hero-stats">
-                        <div className="stat-item">
-                            <span className="stat-number">8</span>
-                            <span className="stat-label">Hours</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-number">100+</span>
-                            <span className="stat-label">Teams</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-number">15K</span>
-                            <span className="stat-label">In Prizes</span>
-                        </div>
-                    </div>
-
-                    <div className="countdown-container">
-                        <div className="countdown-label">Event starts in:</div>
-                        <div className="countdown" id="countdown">
-                            <div className="countdown-item">
-                                <span className="countdown-number" id="days">{timeLeft.days}</span>
-                                <span className="countdown-text">Days</span>
-                            </div>
-                            <div className="countdown-item">
-                                <span className="countdown-number" id="hours">{timeLeft.hours}</span>
-                                <span className="countdown-text">Hours</span>
-                            </div>
-                            <div className="countdown-item">
-                                <span className="countdown-number" id="minutes">{timeLeft.minutes}</span>
-                                <span className="countdown-text">Minutes</span>
-                            </div>
-                            <div className="countdown-item">
-                                <span className="countdown-number" id="seconds">{timeLeft.seconds}</span>
-                                <span className="countdown-text">Seconds</span>
-                            </div>
-                        </div>
-                    </div>
-
                     <div className="hero-buttons">
-                        <a href="#register" className="btn btn-primary" onClick={closeMenu}>
-                            <span>Register Now</span>
-                            <span>→</span>
-                        </a>
-                        <a href="#about" className="btn btn-secondary" onClick={closeMenu}>
-                            <span>Learn More</span>
-                        </a>
                     </div>
                 </div>
             </section>
